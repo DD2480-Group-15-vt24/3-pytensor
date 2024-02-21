@@ -15,26 +15,6 @@ from pytensor.link.c.type import CType
 from pytensor.misc.safe_asarray import _asarray
 from pytensor.utils import apply_across_args
 
-filter_covarage = {
-    83: False,  # Branch 83
-    84: False,  # Branch 84
-    85: False,  # Branch 85
-    86: False,  # Branch 86
-    87: False,  # Branch 87
-    88: False,  # Branch 88
-    89: False,  # Branch 89
-    90: False,  # Branch 90
-    91: False,  # Branch 91
-    92: False,  # Branch 92
-    93: False,  # Branch 93
-    94: False,  # Branch 94
-    95: False,  # Branch 95
-    96: False,  # Branch 96
-    97: False,  # Branch 97
-    98: False,  # Branch 98
-    99: False,  # Branch 99
-    100: False,  # Branch 100
-}
 
 if TYPE_CHECKING:
     from numpy.typing import DTypeLike
@@ -158,7 +138,7 @@ class TensorType(CType[np.ndarray], HasDataType, HasShape):
             shape = self.shape
         return type(self)(dtype, shape, name=self.name)
 
-    def filter(self, data, strict=False, allow_downcast=None):
+    def filter(self, data, filter_covarage, strict=False, allow_downcast=None):
         """Convert `data` to something which can be associated to a `TensorVariable`.
 
         This function is not meant to be called in user code. It is for
@@ -167,64 +147,68 @@ class TensorType(CType[np.ndarray], HasDataType, HasShape):
         """
         # Explicit error message when one accidentally uses a Variable as
         # input (typical mistake, especially with shared variables).
-        filter_covarage[83] = True #set flag for branch 83
-        if isinstance(data, Variable): #branch 83
+        filter_covarage[83] = True  # set flag for branch 83
+        if isinstance(data, Variable):  # branch 83
             raise TypeError(
                 "Expected an array-like object, but found a Variable: "
                 "maybe you are trying to call a function on a (possibly "
                 "shared) variable instead of a numeric array?"
             )
-        filter_covarage[84] = True #set flag for branch 84
-        if isinstance(data, np.memmap) and (data.dtype == self.numpy_dtype): #branch 84
+        filter_covarage[84] = True  # set flag for branch 84
+        if isinstance(data, np.memmap) and (
+            data.dtype == self.numpy_dtype
+        ):  # branch 84
             # numpy.memmap is a "safe" subclass of ndarray,
             # so we can use it wherever we expect a base ndarray.
             # however, casting it would defeat the purpose of not
             # loading the whole data into memory
             pass
-        elif isinstance(data, np.ndarray) and (data.dtype == self.numpy_dtype): #branch 85
-            filter_covarage[85] = True #set flag for branch 85
-            filter_covarage[86] = True #set flag for branch 86
-            if data.dtype.num != self.numpy_dtype.num: #branch 86
+        elif isinstance(data, np.ndarray) and (
+            data.dtype == self.numpy_dtype
+        ):  # branch 85
+            filter_covarage[85] = True  # set flag for branch 85
+            filter_covarage[86] = True  # set flag for branch 86
+            if data.dtype.num != self.numpy_dtype.num:  # branch 86
                 data = _asarray(data, dtype=self.dtype)
             # -- now fall through to ndim check
-        elif strict: #branch 87
-            filter_covarage[87] = True #set flag for branch 87
+        elif strict:  # branch 87
+            filter_covarage[87] = True  # set flag for branch 87
             # If any of the two conditions above was not met,
             # we raise a meaningful TypeError.
-            filter_covarage[88] = True #set flag for branch 88
-            if not isinstance(data, np.ndarray): #branch 88
+            filter_covarage[88] = True  # set flag for branch 88
+            if not isinstance(data, np.ndarray):  # branch 88
                 raise TypeError(
                     f"{self} expected an ndarray object (got {type(data)})."
                 )
-            filter_covarage[89] = True #set flag for branch 89
-            if data.dtype != self.numpy_dtype: #branch 89
+            filter_covarage[89] = True  # set flag for branch 89
+            if data.dtype != self.numpy_dtype:  # branch 89
                 raise TypeError(
                     f"{self} expected an ndarray with dtype={self.numpy_dtype} (got {data.dtype})."
                 )
-        else: #branch 90
-            filter_covarage[90] = True #set flag for branch 90
-            filter_covarage[91] = True #set flag for branch 91
-            if allow_downcast:#branch 91
+        else:  # branch 90
+            filter_covarage[90] = True  # set flag for branch 90
+            filter_covarage[91] = True  # set flag for branch 91
+            if allow_downcast:  # branch 91
                 # Convert to self.dtype, regardless of the type of data
                 data = _asarray(data, dtype=self.dtype)
                 # TODO: consider to pad shape with ones to make it consistent
                 # with self.broadcastable... like vector->row type thing
-            else:#branch 92
-                filter_covarage[92] = True #set flag for branch 92
-                filter_covarage[93] = True #set flag for branch 93
-                if isinstance(data, np.ndarray):#branch 93
+            else:  # branch 92
+                filter_covarage[92] = True  # set flag for branch 92
+                filter_covarage[93] = True  # set flag for branch 93
+                if isinstance(data, np.ndarray):  # branch 93
                     # Check if self.dtype can accurately represent data
                     # (do not try to convert the data)
                     up_dtype = ps.upcast(self.dtype, data.dtype)
-                    filter_covarage[94] = True #set flag for branch 94
-                    if up_dtype == self.dtype: #branch 94
+                    filter_covarage[94] = True  # set flag for branch 94
+                    if up_dtype == self.dtype:  # branch 94
                         # Bug in the following line when data is a
                         # scalar array, see
                         # http://projects.scipy.org/numpy/ticket/1611
                         # data = data.astype(self.dtype)
                         data = _asarray(data, dtype=self.dtype)
-                    filter_covarage[95] = True #set flag for branch 95
-                    if up_dtype != self.dtype:#branch 95
+                    filter_covarage[95] = True  # set flag for branch 95
+                    if up_dtype != self.dtype:  # branch 95
                         err_msg = (
                             f"{self} cannot store a value of dtype {data.dtype} without "
                             "risking loss of precision. If you do not mind "
@@ -234,34 +218,34 @@ class TensorType(CType[np.ndarray], HasDataType, HasShape):
                             f'"function". Value: "{data!r}"'
                         )
                         raise TypeError(err_msg)
-                    filter_covarage[96] = True #set flag for branch 96
+                    filter_covarage[96] = True  # set flag for branch 96
                 elif (
                     allow_downcast is None
                     and isinstance(data, (float, np.floating))
                     and self.dtype == config.floatX
-                ):#branch 96
+                ):  # branch 96
                     # Special case where we allow downcasting of Python float
                     # literals to floatX, even when floatX=='float32'
                     data = _asarray(data, self.dtype)
-                    filter_covarage[97] = True #set flag for branch 97
-                else:#branch 97
+                    filter_covarage[97] = True  # set flag for branch 97
+                else:  # branch 97
                     # data has to be converted.
                     # Check that this conversion is lossless
                     converted_data = _asarray(data, self.dtype)
                     # We use the `values_eq` static function from TensorType
                     # to handle NaN values.
-                    filter_covarage[98] = True #set flag for branch 98
+                    filter_covarage[98] = True  # set flag for branch 98
                     if TensorType.values_eq(
                         np.asarray(data), converted_data, force_same_dtype=False
-                    ):#branch 98
+                    ):  # branch 98
                         data = converted_data
-                    else:#brnach 99
-                        filter_covarage[99] = True #set flag for branch 99
+                    else:  # brnach 99
+                        filter_covarage[99] = True  # set flag for branch 99
                         # Do not print a too long description of data
                         # (ndarray truncates it, but it's not sure for data)
                         str_data = str(data)
-                        filter_covarage[100] = True #set flag for branch 100
-                        if len(str_data) > 80:#branch 100
+                        filter_covarage[100] = True  # set flag for branch 100
+                        if len(str_data) > 80:  # branch 100
                             str_data = str_data[:75] + "(...)"
 
                         err_msg = (

@@ -45,7 +45,7 @@ def calculate_percentage():
     return (true_count / len(mean_coverage)) * 100
 
 
-# original tests, branch #68, 72, 73, 74, 75, 76, 77,81 and 82 true
+# original tests, branch #68, 72, 73, 74, 75, 76, 77,81 and 82 true --> 60%
 def test_mean_single_element():
     res = mean(np.zeros(1), mean_coverage)
     assert res.eval() == 0.0
@@ -63,16 +63,22 @@ def test_list():
     assert mean(ll, mean_coverage).eval() == 1
 
 
-# New test 1, branch #69
+# New test 1, branch #69 --> 66,6666%
 def test_dtype_arg():
     with pytest.raises(NotImplementedError):
         mean(np.zeros(1), mean_coverage, op=True, dtype="float32")
 
 
-# New test 2, branch #70
+# New test 2, branch #70 --> 73,33333%
 def test_acc_dtype_arg():
     with pytest.raises(NotImplementedError):
         mean(np.zeros(1), mean_coverage, op=True, acc_dtype="float32")
+
+
+# New test 3, branch #71 --> 80%
+def test_acc_dtype_arg_2():
+    ll = [shared(0.0), shared(2.0)]
+    assert mean(ll, mean_coverage, axis=0, keepdims=True, op=True).eval() == 1
 
 
 def test_print_coverage():
