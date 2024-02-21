@@ -56,23 +56,7 @@ from pytensor.tensor.variable import (
     TensorVariable,
     _tensor_py_operators,
 )
-mean_coverage = {
-    68: False,  # Branch 68
-    69: False,  # Branch 69
-    70: False,  # Branch 70
-    71: False,  # Branch 71
-    72: False,  # Branch 72
-    73: False,  # Branch 73
-    74: False,  # Branch 74
-    75: False,  # Branch 75
-    76: False,  # Branch 76
-    77: False,  # Branch 77
-    78: False,  # Branch 78
-    79: False,  # Branch 79
-    80: False,  # Branch 80
-    81: False,  # Branch 81
-    82: False,  # Branch 82
-}
+
 
 if TYPE_CHECKING:
     from numpy.typing import ArrayLike, DTypeLike
@@ -1601,7 +1585,15 @@ class Mean(FixedOpCAReduce):
 #      return grad(mean(x, self.axis, op=False),[x])
 
 
-def mean(input, axis=None, dtype=None, op=False, keepdims=False, acc_dtype=None):
+def mean(
+    input,
+    mean_coverage,
+    axis=None,
+    dtype=None,
+    op=False,
+    keepdims=False,
+    acc_dtype=None,
+):
     """
     Computes the mean value along the given axis(es) of a tensor `input`.
 
@@ -1626,18 +1618,18 @@ def mean(input, axis=None, dtype=None, op=False, keepdims=False, acc_dtype=None)
         be in a float type). If None, then we use the same rules as `sum()`.
     """
     input = as_tensor_variable(input)
-    mean_coverage[68] = True #flag for 68
-    if op: #branch 68
-        mean_coverage[69] = True #flag for 69
-        if dtype not in (None, "float64"): #branch 69
+    mean_coverage[68] = True  # flag for 68
+    if op:  # branch 68
+        mean_coverage[69] = True  # flag for 69
+        if dtype not in (None, "float64"):  # branch 69
             raise NotImplementedError(
                 "The Mean op does not support the dtype argument, "
                 "and will always use float64. If you want to specify "
                 "the dtype, call tensor.mean(..., op=False).",
                 dtype,
             )
-        mean_coverage[70] = True #flag for 70
-        if acc_dtype not in (None, "float64"): #branch 70
+        mean_coverage[70] = True  # flag for 70
+        if acc_dtype not in (None, "float64"):  # branch 70
             raise NotImplementedError(
                 "The Mean op does not support the acc_dtype argument, "
                 "and will always use float64. If you want to specify "
@@ -1645,21 +1637,21 @@ def mean(input, axis=None, dtype=None, op=False, keepdims=False, acc_dtype=None)
                 dtype,
             )
         out = Mean(axis)(input)
-        mean_coverage[71] = True #flag for 71
-        if keepdims: #branch 71
+        mean_coverage[71] = True  # flag for 71
+        if keepdims:  # branch 71
             out = makeKeepDims(input, out, axis)
         return out
-    mean_coverage[72] = True #flag for 72
-    if dtype is not None: #branch 72
+    mean_coverage[72] = True  # flag for 72
+    if dtype is not None:  # branch 72
         # The summation will be done with the specified dtype.
         # sum() will complain if it is not suitable.
         sum_dtype = dtype
-    else: #branch 73
-        mean_coverage[73] = True #flag for 73
+    else:  # branch 73
+        mean_coverage[73] = True  # flag for 73
         sum_dtype = None
         # float16 overflows on the cast way too often
-        mean_coverage[74] = True #flag for 74
-        if input.dtype == "float16": #brnach 74
+        mean_coverage[74] = True  # flag for 74
+        if input.dtype == "float16":  # brnach 74
             sum_dtype = "float32"
 
     s = sum(input, axis=axis, dtype=sum_dtype, keepdims=keepdims, acc_dtype=acc_dtype)
@@ -1668,23 +1660,23 @@ def mean(input, axis=None, dtype=None, op=False, keepdims=False, acc_dtype=None)
     # Cast shp into a float type
     # TODO Once we have a consistent casting policy, we could simply
     # use true_div.
-    mean_coverage[75] = True #flag for 75
-    if s.dtype in ("float16", "float32", "complex64"): #branch 75
+    mean_coverage[75] = True  # flag for 75
+    if s.dtype in ("float16", "float32", "complex64"):  # branch 75
         shp = cast(shp, "float32")
-    else: #branch 76
-        mean_coverage[76] = True #flag for 76
+    else:  # branch 76
+        mean_coverage[76] = True  # flag for 76
         shp = cast(shp, "float64")
-    mean_coverage[77] = True #flag for 77
-    if axis is None: #branch 77
+    mean_coverage[77] = True  # flag for 77
+    if axis is None:  # branch 77
         axis = list(range(input.ndim))
-    elif isinstance(axis, (int, np.integer)):#branch 78
-        mean_coverage[78] = True #flag for 78
+    elif isinstance(axis, (int, np.integer)):  # branch 78
+        mean_coverage[78] = True  # flag for 78
         axis = [axis]
-    elif isinstance(axis, np.ndarray) and axis.ndim == 0:#branch 79
+    elif isinstance(axis, np.ndarray) and axis.ndim == 0:  # branch 79
         axis = [int(axis)]
-        mean_coverage[79] = True #flag for 79
-    else:#branch 80
-        mean_coverage[80] = True #flag for 80
+        mean_coverage[79] = True  # flag for 79
+    else:  # branch 80
+        mean_coverage[80] = True  # flag for 80
         axis = [int(a) for a in axis]
 
     # This sequential division will possibly be optimized by PyTensor:
@@ -1692,11 +1684,11 @@ def mean(input, axis=None, dtype=None, op=False, keepdims=False, acc_dtype=None)
         s = true_div(s, shp[i])
 
     # This can happen when axis is an empty list/tuple
-    mean_coverage[81] = True #flag for 81
-    if s.dtype != shp.dtype and s.dtype in discrete_dtypes:#branch 81
+    mean_coverage[81] = True  # flag for 81
+    if s.dtype != shp.dtype and s.dtype in discrete_dtypes:  # branch 81
         s = cast(s, shp.dtype)
-    mean_coverage[82] = True #flag for 82
-    if dtype == "float16" or (dtype is None and input.dtype == "float16"): #branch 82
+    mean_coverage[82] = True  # flag for 82
+    if dtype == "float16" or (dtype is None and input.dtype == "float16"):  # branch 82
         s = cast(s, "float16")
     s.name = "mean"
     return s
