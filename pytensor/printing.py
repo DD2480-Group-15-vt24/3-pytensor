@@ -23,6 +23,61 @@ from pytensor.graph.fg import FunctionGraph
 from pytensor.graph.op import HasInnerGraph, Op, StorageMapType
 from pytensor.graph.utils import Scratchpad
 
+debugprint_coverage = {
+    1: False,  # Branch 1
+    2: False,  # Branch 2
+    3: False,  # Branch 3
+    4: False,  # Branch 4
+    5: False,  # Branch 5
+    6: False,  # Branch 6
+    7: False,  # Branch 7
+    8: False,  # Branch 8
+    9: False,  # Branch 9
+    10: False,  # Branch 10
+    11: False,  # Branch 11
+    12: False,  # Branch 12
+    13: False,  # Branch 13
+    14: False,  # Branch 14
+    15: False,  # Branch 15
+    16: False,  # Branch 16
+    17: False,  # Branch 17
+    18: False,  # Branch 18
+    19: False,  # Branch 19
+    20: False,  # Branch 20
+    21: False,  # Branch 21
+    22: False,  # Branch 22
+    23: False,  # Branch 23
+    24: False,  # Branch 24
+    25: False,  # Branch 25
+    26: False,  # Branch 26
+    27: False,  # Branch 27
+    28: False,  # Branch 28
+    29: False,  # Branch 29
+    30: False,  # Branch 30
+    31: False,  # Branch 31
+    32: False,  # Branch 32
+    33: False,  # Branch 33
+    34: False,  # Branch 34
+    35: False,  # Branch 35
+    36: False,  # Branch 36
+    37: False,  # Branch 37
+    38: False,  # Branch 38
+    39: False,  # Branch 39
+    40: False,  # Branch 40
+    41: False,  # Branch 41
+    42: False,  # Branch 42
+    43: False,  # Branch 43
+    44: False,  # Branch 44
+    45: False,  # Branch 45
+    46: False,  # Branch 46
+    47: False,  # Branch 47
+    48: False,  # Branch 48
+    49: False,  # Branch 49
+    50: False,  # Branch 50
+    51: False,  # Branch 51
+    52: False,  # Branch 52
+    53: False,  # Branch 53
+}
 
 IDTypesType = Literal["id", "int", "CHAR", "auto", ""]
 
@@ -528,33 +583,37 @@ def _debugprint(
     inner_graph_node
         The inner-graph node in which `var` is contained.
     """
+    debugprint_coverage[1] = True #setting flag for 1
     if depth == 0: #branch 1
         return file
-
+    debugprint_coverage[2] = True #setting flag for 2
     if topo_order is None: #branch 2
         topo_order = []
-
+    debugprint_coverage[3] = True #setting flag for 3
     if done is None: #branch 3
         _done = dict()
     else: #branch 4
+        debugprint_coverage[4] = True #setting flag for 4
         _done = done
-
+    debugprint_coverage[5] = True #setting flag for 5
     if inner_graph_ops is None: #branch 5
         inner_graph_ops = []
-
+    debugprint_coverage[6] = True #setting flag for 6
     if print_type: #branch 6
         type_str = f" <{var.type}>"
     else: #branch 7
+        debugprint_coverage[7] = True #setting flag for 7
         type_str = ""
-
+    debugprint_coverage[8] = True #setting flag for 8
     if prefix_child is None: #branch 8
         prefix_child = prefix
-
+    debugprint_coverage[9] = True #setting flag for 9
     if used_ids is None: #branch 9
         _used_ids = dict()
     else: #branch 10
+        debugprint_coverage[10] = True #setting flag for 10
         _used_ids = used_ids
-
+    debugprint_coverage[11] = True #setting flag for 11
     if op_information is None: #branch 11
         op_information = {}
 
@@ -562,82 +621,101 @@ def _debugprint(
         obj: Union[Literal["output"], Apply, Variable], get_printed: bool = True
     ) -> str:
         id_str: str = ""
+        debugprint_coverage[12] = True #setting flag for 12
         if obj in _used_ids: #branch 12
             id_str = _used_ids[obj]
+
         elif obj == "output": #branch 13
             id_str = "output"
+            debugprint_coverage[13] = True #setting flag for 13
         elif id_type == "id": #branch 14
             id_str = f"[id {id(var)}]"
+            debugprint_coverage[14] = True #setting flag for 14
         elif id_type == "int": #branch 15
             id_str = f"[id {len(_used_ids)}]"
+            debugprint_coverage[15] = True #setting flag for 15
         elif id_type == "CHAR": #branch 16
             id_str = f"[id {char_from_number(len(_used_ids))}]"
+            debugprint_coverage[16] = True #setting flag for 16
         elif id_type == "auto": #branch 17
             id_str = f"[id {var.auto_name}]"
+            debugprint_coverage[17] = True #setting flag for 17
         elif id_type == "": #branch 18
             id_str = ""
+            debugprint_coverage[18] = True #setting flag for 18
         if get_printed: #branch 19
             _done[obj] = id_str
+            debugprint_coverage[19] = True #setting flag for 19
         _used_ids[obj] = id_str
         return id_str
-
+    debugprint_coverage[20] = True #setting flag for 20
     if var.owner: #branch 20
         # This variable is the output of a computation, so just print out the
         # `Apply` node
         node = var.owner
 
         var_name = getattr(var, "name", "")
+        debugprint_coverage[21] = True #setting flag for 21
 
         if var_name is None: #branch 21
             var_name = ""
+        debugprint_coverage[22] = True #setting flag for 22
         if var_name: #branch 22
             var_name = f" '{var_name}'"
-
+        debugprint_coverage[23] = True #setting flag for 23
         if print_destroy_map and node.op.destroy_map: #branch 23
             destroy_map_str = f" d={node.op.destroy_map}"
         else: #branch 24
+            debugprint_coverage[24] = True #setting flag for 24
             destroy_map_str = ""
-
+        debugprint_coverage[25] = True #setting flag for 25
         if print_view_map and node.op.view_map: #branch 25
             view_map_str = f" v={node.op.view_map}"
         else: #branch 26
+            debugprint_coverage[26] = True #setting flag for 26
             view_map_str = ""
-
+        debugprint_coverage[27] = True #setting flag for 27
         if topo_order: #branch 27
             o = f" {topo_order.index(node)}"
         else: #branch 28
+            debugprint_coverage[28] = True #setting flag for 28
             o = ""
 
-        already_done = node in _done #branch 29
-        id_str = get_id_str(node) #branch 30
+        already_done = node in _done 
+        id_str = get_id_str(node)
 
+        debugprint_coverage[31] = True #setting flag for 31
         if len(node.outputs) == 1: #branch 31
             output_idx = ""
         else: #branch 32
+            debugprint_coverage[32] = True #setting flag for 32
             output_idx = f".{node.outputs.index(var)}"
-
+        debugprint_coverage[33] = True #setting flag for 33
         if id_str: #branch 33
             id_str = f" {id_str}"
-
+        debugprint_coverage[34] = True #setting flag for 34
         if storage_map and node.outputs[0] in storage_map: #branch 34
             data = f" {storage_map[node.outputs[0]]}"
         else: #branch 35
+            debugprint_coverage[35] = True #setting flag for 35
             data = ""
-
+        debugprint_coverage[36] = True #setting flag for 36
         if is_inner_graph_header: #branch 36
             var_output = f"{prefix}{node.op}{id_str}{destroy_map_str}{view_map_str}{o}"
         else: #branch 37
+            debugprint_coverage[37] = True #setting flag for 37
             var_output = f"{prefix}{node.op}{output_idx}{id_str}{type_str}{var_name}{destroy_map_str}{view_map_str}{o}{data}"
-
+        debugprint_coverage[38] = True #setting flag for 38
         if print_op_info and node not in op_information: #branch 38
             op_information.update(op_debug_information(node.op, node))
 
         node_info = (
             parent_node and op_information.get(parent_node)
-        ) or op_information.get(node) #branch 39
+        ) or op_information.get(node)
+        debugprint_coverage[40] = True #setting flag for 40
         if node_info and var in node_info and not is_inner_graph_header: #branch 40
             var_output = f"{var_output} ({node_info[var]})"
-
+        debugprint_coverage[41] = True #setting flag for 41
         if profile and profile.apply_time and node in profile.apply_time: #branch 41
             op_time = profile.apply_time[node]
             op_time_percent = (op_time / profile.fct_call_time) * 100
@@ -656,8 +734,9 @@ def _debugprint(
                 file=file,
             )
         else: #branch 42
+            debugprint_coverage[42] = True #setting flag for 42
             print(var_output, file=file)
-
+        debugprint_coverage[43] = True #setting flag for 43
         if not already_done and (
             not stop_on_name or not (hasattr(var, "name") and var.name is not None)
         ): #branch 43
@@ -665,16 +744,18 @@ def _debugprint(
             new_prefix_child = prefix_child + " │ "
 
             for in_idx, in_var in enumerate(node.inputs):
-                if in_idx == len(node.inputs) - 1:
+                debugprint_coverage[29] = True #setting flag for 29 (miss)
+                if in_idx == len(node.inputs) - 1: #branch 29
                     new_prefix = prefix_child + " └─ "
                     new_prefix_child = prefix_child + "   "
-
-                if hasattr(in_var, "owner") and hasattr(in_var.owner, "op"):
+                debugprint_coverage[30] = True #setting flag for 30
+                if hasattr(in_var, "owner") and hasattr(in_var.owner, "op"): #branch 30
+                    debugprint_coverage[39] = True #setting flag for 39
                     if (
                         isinstance(in_var.owner.op, HasInnerGraph)
                         or hasattr(in_var.owner.op, "scalar_op")
                         and isinstance(in_var.owner.op.scalar_op, HasInnerGraph)
-                    ) and in_var not in inner_graph_ops:
+                    ) and in_var not in inner_graph_ops: #branch 39
                         inner_graph_ops.append(in_var)
 
                 _debugprint(
@@ -701,29 +782,33 @@ def _debugprint(
                     inner_graph_node=inner_graph_node,
                 )
         elif not is_inner_graph_header: #branch 44
+            debugprint_coverage[44] = True #setting flag for 44
             print(prefix_child + " └─ ···", file=file)
     else: #branch 45
+        debugprint_coverage[45] = True #setting flag for 45
         id_str = get_id_str(var)
-
+        debugprint_coverage[46] = True #setting flag for 46
         if id_str: #branch 46
             id_str = f" {id_str}"
-
+        debugprint_coverage[47] = True #setting flag for 47
         if storage_map and var in storage_map: #branch 47
             data = f" {storage_map[var]}"
         else: #branch 48
+            debugprint_coverage[48] = True #setting flag for 48
             data = ""
 
         var_output = f"{prefix}{var}{id_str}{type_str}{data}"
-
+        debugprint_coverage[49] = True #setting flag for 49
         if print_op_info and var.owner and var.owner not in op_information: #branch 49
             op_information.update(op_debug_information(var.owner.op, var.owner))
-
+        debugprint_coverage[50] = True #setting flag for 50
         if inner_to_outer_inputs is not None and var in inner_to_outer_inputs: #branch 50
             outer_var = inner_to_outer_inputs[var]
-
+            debugprint_coverage[51] = True #setting flag for 51
             if outer_var.owner: #branch 51
                 outer_id_str = get_id_str(outer_var.owner)
             else: #branch 52
+                debugprint_coverage[52] = True #setting flag for 52
                 outer_id_str = get_id_str(outer_var)
 
             var_output = f"{var_output} -> {outer_id_str}"
@@ -732,6 +817,7 @@ def _debugprint(
         # of nesting.
         for node in dict.fromkeys([inner_graph_node, parent_node, var.owner]):
             node_info = op_information.get(node)
+            debugprint_coverage[53] = True #setting flag for 53
             if node_info and var in node_info: #branch 53
                 var_output = f"{var_output} ({node_info[var]})"
 

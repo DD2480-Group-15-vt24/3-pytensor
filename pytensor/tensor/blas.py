@@ -109,6 +109,17 @@ from pytensor.utils import memoize
 
 _logger = logging.getLogger("pytensor.tensor.blas")
 
+perform_coverage = {
+    60: False,  # Branch 60
+    61: False,  # Branch 61
+    62: False,  # Branch 62
+    63: False,  # Branch 63
+    64: False,  # Branch 64
+    65: False,  # Branch 65
+    66: False,  # Branch 66
+    67: False,  # Branch 67
+}
+
 try:
     import scipy.linalg.blas
 
@@ -207,9 +218,11 @@ class Gemv(Op):
             raise NotImplementedError("Only dense tensor types are supported")
 
         return Apply(self, inputs, [y.type()])
+    
 
     def perform(self, node, inputs, out_storage):
         y, alpha, A, x, beta = inputs
+        perform_coverage[60] = True #setting flag for 60
         if ( # branch 60
             have_fblas
             and y.shape[0] != 0
@@ -217,12 +230,14 @@ class Gemv(Op):
             and y.dtype in _blas_gemv_fns
         ):
             gemv = _blas_gemv_fns[y.dtype]
+            perform_coverage[61] = True #setting flag for 61
 
             if A.shape[0] != y.shape[0] or A.shape[1] != x.shape[0]: #branch 61
                 raise ValueError(
                     "Incompatible shapes for gemv "
                     f"(beta * y + alpha * dot(A, x)). y: {y.shape}, A: {A.shape}, x: {x.shape}"
                 )
+            perform_coverage[62] = True #setting flag for 62
 
             if beta == 0 and check_init_y(): #branch 62
                 y.fill(0)
@@ -238,14 +253,20 @@ class Gemv(Op):
             out_storage[0][0] = gemv(
                 alpha, A.T, x, beta, y, overwrite_y=self.inplace, trans=True
             )
+            perform_coverage[63] = True #setting flag for 63
         else: #branch 63
             out = np.dot(A, x)
+            perform_coverage[64] = True #setting flag for 64
             if alpha != 1: #branch 64
                 out *= alpha
+            perform_coverage[65] = True #setting flag for 65    
             if beta != 0: #branch 65
+                perform_coverage[66] = True #setting flag for 66
                 if beta != 1:# branch 66
                     out += beta * y
+                    
                 else: #branch 67
+                    perform_coverage[67] = True #setting flag for 67
                     out += y
             out_storage[0][0] = np.asarray(out, dtype=y.dtype)
 
