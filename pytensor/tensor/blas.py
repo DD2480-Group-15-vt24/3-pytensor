@@ -210,7 +210,7 @@ class Gemv(Op):
 
     def perform(self, node, inputs, out_storage):
         y, alpha, A, x, beta = inputs
-        if (
+        if ( # branch 60
             have_fblas
             and y.shape[0] != 0
             and x.shape[0] != 0
@@ -218,13 +218,13 @@ class Gemv(Op):
         ):
             gemv = _blas_gemv_fns[y.dtype]
 
-            if A.shape[0] != y.shape[0] or A.shape[1] != x.shape[0]:
+            if A.shape[0] != y.shape[0] or A.shape[1] != x.shape[0]: #branch 61
                 raise ValueError(
                     "Incompatible shapes for gemv "
                     f"(beta * y + alpha * dot(A, x)). y: {y.shape}, A: {A.shape}, x: {x.shape}"
                 )
 
-            if beta == 0 and check_init_y():
+            if beta == 0 and check_init_y(): #branch 62
                 y.fill(0)
 
             # Here I suppose that A is in c order. If we don't make it
@@ -238,14 +238,14 @@ class Gemv(Op):
             out_storage[0][0] = gemv(
                 alpha, A.T, x, beta, y, overwrite_y=self.inplace, trans=True
             )
-        else:
+        else: #branch 63
             out = np.dot(A, x)
-            if alpha != 1:
+            if alpha != 1: #branch 64
                 out *= alpha
-            if beta != 0:
-                if beta != 1:
+            if beta != 0: #branch 65
+                if beta != 1:# branch 66
                     out += beta * y
-                else:
+                else: #branch 67
                     out += y
             out_storage[0][0] = np.asarray(out, dtype=y.dtype)
 

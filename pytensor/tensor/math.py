@@ -1610,15 +1610,15 @@ def mean(input, axis=None, dtype=None, op=False, keepdims=False, acc_dtype=None)
         be in a float type). If None, then we use the same rules as `sum()`.
     """
     input = as_tensor_variable(input)
-    if op:
-        if dtype not in (None, "float64"):
+    if op: #branch 68
+        if dtype not in (None, "float64"): #branch 69
             raise NotImplementedError(
                 "The Mean op does not support the dtype argument, "
                 "and will always use float64. If you want to specify "
                 "the dtype, call tensor.mean(..., op=False).",
                 dtype,
             )
-        if acc_dtype not in (None, "float64"):
+        if acc_dtype not in (None, "float64"): #branch 70
             raise NotImplementedError(
                 "The Mean op does not support the acc_dtype argument, "
                 "and will always use float64. If you want to specify "
@@ -1626,18 +1626,18 @@ def mean(input, axis=None, dtype=None, op=False, keepdims=False, acc_dtype=None)
                 dtype,
             )
         out = Mean(axis)(input)
-        if keepdims:
+        if keepdims: #branch 71
             out = makeKeepDims(input, out, axis)
         return out
 
-    if dtype is not None:
+    if dtype is not None: #branch 72
         # The summation will be done with the specified dtype.
         # sum() will complain if it is not suitable.
         sum_dtype = dtype
-    else:
+    else: #branch 73
         sum_dtype = None
         # float16 overflows on the cast way too often
-        if input.dtype == "float16":
+        if input.dtype == "float16": #brnach 74
             sum_dtype = "float32"
 
     s = sum(input, axis=axis, dtype=sum_dtype, keepdims=keepdims, acc_dtype=acc_dtype)
@@ -1646,18 +1646,18 @@ def mean(input, axis=None, dtype=None, op=False, keepdims=False, acc_dtype=None)
     # Cast shp into a float type
     # TODO Once we have a consistent casting policy, we could simply
     # use true_div.
-    if s.dtype in ("float16", "float32", "complex64"):
+    if s.dtype in ("float16", "float32", "complex64"): #branch 75
         shp = cast(shp, "float32")
-    else:
+    else: #branch 76
         shp = cast(shp, "float64")
 
-    if axis is None:
+    if axis is None: #branch 77
         axis = list(range(input.ndim))
-    elif isinstance(axis, (int, np.integer)):
+    elif isinstance(axis, (int, np.integer)):#branch 78
         axis = [axis]
-    elif isinstance(axis, np.ndarray) and axis.ndim == 0:
+    elif isinstance(axis, np.ndarray) and axis.ndim == 0:#branch 79
         axis = [int(axis)]
-    else:
+    else:#branch 80
         axis = [int(a) for a in axis]
 
     # This sequential division will possibly be optimized by PyTensor:
@@ -1665,10 +1665,10 @@ def mean(input, axis=None, dtype=None, op=False, keepdims=False, acc_dtype=None)
         s = true_div(s, shp[i])
 
     # This can happen when axis is an empty list/tuple
-    if s.dtype != shp.dtype and s.dtype in discrete_dtypes:
+    if s.dtype != shp.dtype and s.dtype in discrete_dtypes:#branch 81
         s = cast(s, shp.dtype)
 
-    if dtype == "float16" or (dtype is None and input.dtype == "float16"):
+    if dtype == "float16" or (dtype is None and input.dtype == "float16"): #branch 82
         s = cast(s, "float16")
     s.name = "mean"
     return s

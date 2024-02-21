@@ -528,117 +528,117 @@ def _debugprint(
     inner_graph_node
         The inner-graph node in which `var` is contained.
     """
-    if depth == 0:
+    if depth == 0: #branch 1
         return file
 
-    if topo_order is None:
+    if topo_order is None: #branch 2
         topo_order = []
 
-    if done is None:
+    if done is None: #branch 3
         _done = dict()
-    else:
+    else: #branch 4
         _done = done
 
-    if inner_graph_ops is None:
+    if inner_graph_ops is None: #branch 5
         inner_graph_ops = []
 
-    if print_type:
+    if print_type: #branch 6
         type_str = f" <{var.type}>"
-    else:
+    else: #branch 7
         type_str = ""
 
-    if prefix_child is None:
+    if prefix_child is None: #branch 8
         prefix_child = prefix
 
-    if used_ids is None:
+    if used_ids is None: #branch 9
         _used_ids = dict()
-    else:
+    else: #branch 10
         _used_ids = used_ids
 
-    if op_information is None:
+    if op_information is None: #branch 11
         op_information = {}
 
     def get_id_str(
         obj: Union[Literal["output"], Apply, Variable], get_printed: bool = True
     ) -> str:
         id_str: str = ""
-        if obj in _used_ids:
+        if obj in _used_ids: #branch 12
             id_str = _used_ids[obj]
-        elif obj == "output":
+        elif obj == "output": #branch 13
             id_str = "output"
-        elif id_type == "id":
+        elif id_type == "id": #branch 14
             id_str = f"[id {id(var)}]"
-        elif id_type == "int":
+        elif id_type == "int": #branch 15
             id_str = f"[id {len(_used_ids)}]"
-        elif id_type == "CHAR":
+        elif id_type == "CHAR": #branch 16
             id_str = f"[id {char_from_number(len(_used_ids))}]"
-        elif id_type == "auto":
+        elif id_type == "auto": #branch 17
             id_str = f"[id {var.auto_name}]"
-        elif id_type == "":
+        elif id_type == "": #branch 18
             id_str = ""
-        if get_printed:
+        if get_printed: #branch 19
             _done[obj] = id_str
         _used_ids[obj] = id_str
         return id_str
 
-    if var.owner:
+    if var.owner: #branch 20
         # This variable is the output of a computation, so just print out the
         # `Apply` node
         node = var.owner
 
         var_name = getattr(var, "name", "")
 
-        if var_name is None:
+        if var_name is None: #branch 21
             var_name = ""
-        if var_name:
+        if var_name: #branch 22
             var_name = f" '{var_name}'"
 
-        if print_destroy_map and node.op.destroy_map:
+        if print_destroy_map and node.op.destroy_map: #branch 23
             destroy_map_str = f" d={node.op.destroy_map}"
-        else:
+        else: #branch 24
             destroy_map_str = ""
 
-        if print_view_map and node.op.view_map:
+        if print_view_map and node.op.view_map: #branch 25
             view_map_str = f" v={node.op.view_map}"
-        else:
+        else: #branch 26
             view_map_str = ""
 
-        if topo_order:
+        if topo_order: #branch 27
             o = f" {topo_order.index(node)}"
-        else:
+        else: #branch 28
             o = ""
 
-        already_done = node in _done
-        id_str = get_id_str(node)
+        already_done = node in _done #branch 29
+        id_str = get_id_str(node) #branch 30
 
-        if len(node.outputs) == 1:
+        if len(node.outputs) == 1: #branch 31
             output_idx = ""
-        else:
+        else: #branch 32
             output_idx = f".{node.outputs.index(var)}"
 
-        if id_str:
+        if id_str: #branch 33
             id_str = f" {id_str}"
 
-        if storage_map and node.outputs[0] in storage_map:
+        if storage_map and node.outputs[0] in storage_map: #branch 34
             data = f" {storage_map[node.outputs[0]]}"
-        else:
+        else: #branch 35
             data = ""
 
-        if is_inner_graph_header:
+        if is_inner_graph_header: #branch 36
             var_output = f"{prefix}{node.op}{id_str}{destroy_map_str}{view_map_str}{o}"
-        else:
+        else: #branch 37
             var_output = f"{prefix}{node.op}{output_idx}{id_str}{type_str}{var_name}{destroy_map_str}{view_map_str}{o}{data}"
 
-        if print_op_info and node not in op_information:
+        if print_op_info and node not in op_information: #branch 38
             op_information.update(op_debug_information(node.op, node))
 
         node_info = (
             parent_node and op_information.get(parent_node)
-        ) or op_information.get(node)
-        if node_info and var in node_info and not is_inner_graph_header:
+        ) or op_information.get(node) #branch 39
+        if node_info and var in node_info and not is_inner_graph_header: #branch 40
             var_output = f"{var_output} ({node_info[var]})"
 
-        if profile and profile.apply_time and node in profile.apply_time:
+        if profile and profile.apply_time and node in profile.apply_time: #branch 41
             op_time = profile.apply_time[node]
             op_time_percent = (op_time / profile.fct_call_time) * 100
             tot_time_dict = profile.compute_total_times()
@@ -655,12 +655,12 @@ def _debugprint(
                 ),
                 file=file,
             )
-        else:
+        else: #branch 42
             print(var_output, file=file)
 
         if not already_done and (
             not stop_on_name or not (hasattr(var, "name") and var.name is not None)
-        ):
+        ): #branch 43
             new_prefix = prefix_child + " ├─ "
             new_prefix_child = prefix_child + " │ "
 
@@ -700,30 +700,30 @@ def _debugprint(
                     print_view_map=print_view_map,
                     inner_graph_node=inner_graph_node,
                 )
-        elif not is_inner_graph_header:
+        elif not is_inner_graph_header: #branch 44
             print(prefix_child + " └─ ···", file=file)
-    else:
+    else: #branch 45
         id_str = get_id_str(var)
 
-        if id_str:
+        if id_str: #branch 46
             id_str = f" {id_str}"
 
-        if storage_map and var in storage_map:
+        if storage_map and var in storage_map: #branch 47
             data = f" {storage_map[var]}"
-        else:
+        else: #branch 48
             data = ""
 
         var_output = f"{prefix}{var}{id_str}{type_str}{data}"
 
-        if print_op_info and var.owner and var.owner not in op_information:
+        if print_op_info and var.owner and var.owner not in op_information: #branch 49
             op_information.update(op_debug_information(var.owner.op, var.owner))
 
-        if inner_to_outer_inputs is not None and var in inner_to_outer_inputs:
+        if inner_to_outer_inputs is not None and var in inner_to_outer_inputs: #branch 50
             outer_var = inner_to_outer_inputs[var]
 
-            if outer_var.owner:
+            if outer_var.owner: #branch 51
                 outer_id_str = get_id_str(outer_var.owner)
-            else:
+            else: #branch 52
                 outer_id_str = get_id_str(outer_var)
 
             var_output = f"{var_output} -> {outer_id_str}"
@@ -732,7 +732,7 @@ def _debugprint(
         # of nesting.
         for node in dict.fromkeys([inner_graph_node, parent_node, var.owner]):
             node_info = op_information.get(node)
-            if node_info and var in node_info:
+            if node_info and var in node_info: #branch 53
                 var_output = f"{var_output} ({node_info[var]})"
 
         print(var_output, file=file)

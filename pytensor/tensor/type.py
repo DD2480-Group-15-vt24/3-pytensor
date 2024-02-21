@@ -147,52 +147,52 @@ class TensorType(CType[np.ndarray], HasDataType, HasShape):
         """
         # Explicit error message when one accidentally uses a Variable as
         # input (typical mistake, especially with shared variables).
-        if isinstance(data, Variable):
+        if isinstance(data, Variable): #branch 83
             raise TypeError(
                 "Expected an array-like object, but found a Variable: "
                 "maybe you are trying to call a function on a (possibly "
                 "shared) variable instead of a numeric array?"
             )
 
-        if isinstance(data, np.memmap) and (data.dtype == self.numpy_dtype):
+        if isinstance(data, np.memmap) and (data.dtype == self.numpy_dtype): #branch 84
             # numpy.memmap is a "safe" subclass of ndarray,
             # so we can use it wherever we expect a base ndarray.
             # however, casting it would defeat the purpose of not
             # loading the whole data into memory
             pass
-        elif isinstance(data, np.ndarray) and (data.dtype == self.numpy_dtype):
-            if data.dtype.num != self.numpy_dtype.num:
+        elif isinstance(data, np.ndarray) and (data.dtype == self.numpy_dtype): #branch 85
+            if data.dtype.num != self.numpy_dtype.num: #branch 86
                 data = _asarray(data, dtype=self.dtype)
             # -- now fall through to ndim check
-        elif strict:
+        elif strict: #branch 87
             # If any of the two conditions above was not met,
             # we raise a meaningful TypeError.
-            if not isinstance(data, np.ndarray):
+            if not isinstance(data, np.ndarray): #branch 88
                 raise TypeError(
                     f"{self} expected an ndarray object (got {type(data)})."
                 )
-            if data.dtype != self.numpy_dtype:
+            if data.dtype != self.numpy_dtype: #branch 89
                 raise TypeError(
                     f"{self} expected an ndarray with dtype={self.numpy_dtype} (got {data.dtype})."
                 )
-        else:
-            if allow_downcast:
+        else: #branch 90
+            if allow_downcast:#branch 91
                 # Convert to self.dtype, regardless of the type of data
                 data = _asarray(data, dtype=self.dtype)
                 # TODO: consider to pad shape with ones to make it consistent
                 # with self.broadcastable... like vector->row type thing
-            else:
-                if isinstance(data, np.ndarray):
+            else:#branch 92
+                if isinstance(data, np.ndarray):#branch 93
                     # Check if self.dtype can accurately represent data
                     # (do not try to convert the data)
                     up_dtype = ps.upcast(self.dtype, data.dtype)
-                    if up_dtype == self.dtype:
+                    if up_dtype == self.dtype: #branch 94
                         # Bug in the following line when data is a
                         # scalar array, see
                         # http://projects.scipy.org/numpy/ticket/1611
                         # data = data.astype(self.dtype)
                         data = _asarray(data, dtype=self.dtype)
-                    if up_dtype != self.dtype:
+                    if up_dtype != self.dtype:#branch 95
                         err_msg = (
                             f"{self} cannot store a value of dtype {data.dtype} without "
                             "risking loss of precision. If you do not mind "
@@ -206,11 +206,11 @@ class TensorType(CType[np.ndarray], HasDataType, HasShape):
                     allow_downcast is None
                     and isinstance(data, (float, np.floating))
                     and self.dtype == config.floatX
-                ):
+                ):#branch 96
                     # Special case where we allow downcasting of Python float
                     # literals to floatX, even when floatX=='float32'
                     data = _asarray(data, self.dtype)
-                else:
+                else:#branch 97
                     # data has to be converted.
                     # Check that this conversion is lossless
                     converted_data = _asarray(data, self.dtype)
@@ -218,13 +218,13 @@ class TensorType(CType[np.ndarray], HasDataType, HasShape):
                     # to handle NaN values.
                     if TensorType.values_eq(
                         np.asarray(data), converted_data, force_same_dtype=False
-                    ):
+                    ):#branch 98
                         data = converted_data
-                    else:
+                    else:#brnach 99
                         # Do not print a too long description of data
                         # (ndarray truncates it, but it's not sure for data)
                         str_data = str(data)
-                        if len(str_data) > 80:
+                        if len(str_data) > 80:#branch 100
                             str_data = str_data[:75] + "(...)"
 
                         err_msg = (

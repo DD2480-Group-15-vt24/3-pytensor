@@ -342,17 +342,17 @@ class FunctionGraph(MetaObject):
         # to know where to stop going down.)
         new_nodes = io_toposort(self.variables, apply_node.outputs)
 
-        if check:
+        if check: #branch 54
             for node in new_nodes:
                 for var in node.inputs:
                     if (
                         var.owner is None
                         and not isinstance(var, AtomicVariable)
                         and var not in self.inputs
-                    ):
-                        if import_missing:
+                    ):#branch 55
+                        if import_missing: #branch 56
                             self.add_input(var)
-                        else:
+                        else: #branch 57
                             error_msg = (
                                 f"Input {node.inputs.index(var)} ({var})"
                                 " of the graph (indices start "
@@ -366,14 +366,14 @@ class FunctionGraph(MetaObject):
         for node in new_nodes:
             assert node not in self.apply_nodes
             self.apply_nodes.add(node)
-            if not hasattr(node.tag, "imported_by"):
+            if not hasattr(node.tag, "imported_by"): #branch 58
                 node.tag.imported_by = []
             node.tag.imported_by.append(str(reason))
             for output in node.outputs:
                 self.setup_var(output)
                 self.variables.add(output)
             for i, input in enumerate(node.inputs):
-                if input not in self.variables:
+                if input not in self.variables: #branch 59
                     self.setup_var(input)
                     self.variables.add(input)
                 self.add_client(input, (node, i))
