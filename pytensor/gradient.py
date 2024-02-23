@@ -144,6 +144,7 @@ class DisconnectedType(Type):
 
 disconnected_type = DisconnectedType()
 
+rop_cov = {i + 1: False for i in range(21)}
 
 def Rop(
     f: Union[Variable, Sequence[Variable]],
@@ -194,33 +195,43 @@ def Rop(
     """
 
     if not isinstance(wrt, (list, tuple)):
+        rop_cov[1] = True
         _wrt: list[Variable] = [pytensor.tensor.as_tensor_variable(wrt)]
     else:
+        rop_cov[2] = False
         _wrt = [pytensor.tensor.as_tensor_variable(x) for x in wrt]
 
     if not isinstance(eval_points, (list, tuple)):
+        rop_cov[3] = True
         _eval_points: list[Variable] = [pytensor.tensor.as_tensor_variable(eval_points)]
     else:
+        rop_cov[4] = False
         _eval_points = [pytensor.tensor.as_tensor_variable(x) for x in eval_points]
 
     if not isinstance(f, (list, tuple)):
+        rop_cov[5] = True
         _f: list[Variable] = [pytensor.tensor.as_tensor_variable(f)]
     else:
+        rop_cov[6] = False
         _f = [pytensor.tensor.as_tensor_variable(x) for x in f]
 
     if len(_wrt) != len(_eval_points):
+        rop_cov[7] = True
         raise ValueError("`wrt` must be the same length as `eval_points`.")
 
     # Check that each element of wrt corresponds to an element
     # of eval_points with the same dimensionality.
     for i, (wrt_elem, eval_point) in enumerate(zip(_wrt, _eval_points)):
         try:
+            rop_cov[8] = True
             if wrt_elem.type.ndim != eval_point.type.ndim:
+                rop_cov[9] = False
                 raise ValueError(
                     f"Elements {i} of `wrt` and `eval_point` have mismatched dimensionalities: "
                     f"{wrt_elem.type.ndim} and {eval_point.type.ndim}"
                 )
         except AttributeError:
+            rop_cov[10] = False
             # wrt_elem and eval_point don't always have ndim like random type
             # Tensor, Sparse have the ndim attribute
             pass
@@ -301,11 +312,13 @@ def Rop(
     rval: list[Optional[Variable]] = []
     for out in _f:
         if out in _wrt:
+            rop_cov[11] = True
             rval.append(_eval_points[_wrt.index(out)])
         elif (
             seen_nodes.get(out.owner, None) is None
             or seen_nodes[out.owner][out.owner.outputs.index(out)] is None
         ):
+            rop_cov[12] = False
             message = (
                 "Rop method was asked to compute the gradient "
                 "with respect to a variable that is not part of "
@@ -313,31 +326,40 @@ def Rop(
                 f"used only by a non-differentiable operator: {out}"
             )
             if disconnected_outputs == "ignore":
+                rop_cov[13] = True
                 pass
             elif disconnected_outputs == "warn":
+                rop_cov[14] = False
                 warnings.warn(message, stacklevel=2)
             elif disconnected_outputs == "raise":
+                rop_cov[15] = False
                 message = utils.get_variable_trace_string(out)
                 raise DisconnectedInputError(message)
             else:
+                rop_cov[16] = False
                 raise ValueError(
                     "Invalid value for keyword "
                     "'disconnected_inputs', valid values are "
                     "'ignore', 'warn' and 'raise'."
                 )
             if return_disconnected.lower() == "zero":
+                rop_cov[17] = False
                 rval.append(pytensor.tensor.zeros_like(out))
             elif return_disconnected.lower() == "none":
+                rop_cov[18] = False
                 rval.append(None)
             elif return_disconnected.lower() == "disconnected":
+                rop_cov[19] = False
                 rval.append(disconnected_type())
             else:
+                rop_cov[20] = False
                 raise ValueError(
                     "Invalid value for keyword "
                     "'return_disconnected', valid values are "
                     "'zero', 'None' and 'Disconnected'."
                 )
         else:
+            rop_cov[21] = False
             rval.append(seen_nodes[out.owner][out.owner.outputs.index(out)])
 
     using_list = isinstance(f, list)
@@ -413,6 +435,7 @@ def Lop(
     using_tuple = isinstance(wrt, tuple)
     return as_list_or_tuple(using_list, using_tuple, ret)
 
+grad_cov = {i + 1: False for i in range(28)}
 
 def grad(
     cost: Optional[Variable],
@@ -479,27 +502,35 @@ def grad(
     t0 = time.perf_counter()
 
     if cost is None:
+        grad_cov[1] = True
         if known_grads is None:
+            grad_cov[2] = True
             raise ValueError("cost and known_grads can't both be None.")
 
     if cost is not None and isinstance(cost.type, NullType):
+        grad_cov[3] = True
         raise ValueError(
             "Can't differentiate a NaN cost. "
             f"Cost is NaN because {cost.type.why_null}"
         )
 
     if cost is not None and cost.type.ndim != 0:
+        grad_cov[4] = True
         raise TypeError("Cost must be a scalar.")
 
     if not isinstance(wrt, Sequence):
+        grad_cov[5] = True
         _wrt: list[Variable] = [wrt]
     else:
+        grad_cov[6] = True
         _wrt = list(wrt)
 
     outputs = []
     if cost is not None:
+        grad_cov[7] = True
         outputs.append(cost)
     if known_grads is not None:
+        grad_cov[8] = True
         outputs.extend(list(known_grads.keys()))
 
     var_to_app_to_idx = _populate_var_to_app_to_idx(outputs, _wrt, consider_constant)
@@ -508,15 +539,20 @@ def grad(
     grad_dict = {}
 
     if known_grads is None:
+        grad_cov[9] = True
         known_grads = {}
 
     assert isinstance(known_grads, dict)
 
     # The gradient of the cost is 1 unless specified otherwise by known_grads.
     if cost is not None:
+        grad_cov[10] = True
+
         if cost in known_grads:
             g_cost = known_grads[cost]
+            grad_cov[11] = True
         else:
+            grad_cov[12] = True
             g_cost = _float_ones_like(cost)
         # g_cost may be Disconnected or NullType. A creative use of the
         # function, sure, but nonetheless one we can and should support.
@@ -525,6 +561,7 @@ def grad(
             hasattr(g_cost.type, "dtype")
             and cost.type.dtype in pytensor.tensor.type.continuous_dtypes
         ):
+            grad_cov[13] = True
             # Here we enforce the constraint that floating point variables
             # have the same dtype as their gradient.
             g_cost = g_cost.astype(cost.type.dtype)
@@ -532,6 +569,7 @@ def grad(
         # This is to be enforced by the Op.grad method for the
         # Op that outputs cost.
         if hasattr(g_cost.type, "dtype"):
+            grad_cov[14] = True
             assert g_cost.type.dtype in pytensor.tensor.type.continuous_dtypes
 
         grad_dict[cost] = g_cost
@@ -540,6 +578,7 @@ def grad(
         g_var = known_grads[var]
 
         if not hasattr(g_var, "type"):
+            grad_cov[15] = True
             raise TypeError(
                 "output grads must be pytensor variables."
                 f"Ambiguous whether {type(g_var)} should be made into tensor"
@@ -549,6 +588,7 @@ def grad(
         if not isinstance(
             g_var.type, (NullType, DisconnectedType)
         ) and "float" not in str(g_var.type.dtype):
+            grad_cov[16] = True
             raise TypeError(
                 "Gradients must always be NullType, "
                 "DisconnectedType, or continuous, but grad was "
@@ -589,11 +629,14 @@ def grad(
     # according to the flag, possibly raise an error if wrt is disconnected
     for elem in _wrt:
         if elem not in var_to_app_to_idx and elem is not cost and elem not in grad_dict:
+            grad_cov[17] = True
+
             handle_disconnected(elem)
             grad_dict[elem] = disconnected_type()
 
     cost_name = None
     if add_names and cost is not None:
+        grad_cov[18] = True
         cost_name = cost.name
 
     # Make sure we didn't initialize the grad_dict with any ints
@@ -602,6 +645,7 @@ def grad(
     for var in grad_dict:
         g = grad_dict[var]
         if hasattr(g.type, "dtype"):
+            grad_cov[19] = True
             assert g.type.dtype in pytensor.tensor.type.float_dtypes
 
     _rval: Sequence[Variable] = _populate_grad_dict(
@@ -612,19 +656,26 @@ def grad(
 
     for i in range(len(_rval)):
         if isinstance(_rval[i].type, NullType):
+            grad_cov[20] = True
             if null_gradients == "raise":
+                grad_cov[21] = True
                 raise NullTypeGradError(
                     f"`grad` encountered a NaN. {_rval[i].type.why_null}"
                 )
             else:
+                grad_cov[22] = True
                 assert null_gradients == "return"
         if isinstance(_rval[i].type, DisconnectedType):
+            grad_cov[23] = True
             handle_disconnected(_rval[i])
             if return_disconnected == "zero":
+                grad_cov[24] = True
                 rval[i] = _float_zeros_like(_wrt[i])
             elif return_disconnected.lower() == "none":
+                grad_cov[25] = True
                 rval[i] = None
             else:
+                grad_cov[26] = True
                 assert return_disconnected.lower() == "disconnected"
 
     t1 = time.perf_counter()
@@ -632,8 +683,10 @@ def grad(
     grad_time += t1 - t0
 
     if isinstance(wrt, tuple):
+        grad_cov[27] = True
         return tuple(rval)
     elif not isinstance(wrt, list):
+        grad_cov[28] = True
         return rval[0]
 
     return rval
@@ -992,6 +1045,7 @@ class DisconnectedInputError(ValueError):
     disconnected_inputs='raise'.
     """
 
+acc_cov = {i + 1: False for i in range(31)}
 
 def _populate_grad_dict(var_to_app_to_idx, grad_dict, wrt, cost_name=None):
     """Helper function for grad function.
@@ -1032,6 +1086,7 @@ def _populate_grad_dict(var_to_app_to_idx, grad_dict, wrt, cost_name=None):
         """Populates term_dict[node] and returns it"""
 
         if node not in term_dict:
+            acc_cov[1] = True
             inputs = node.inputs
 
             output_grads = [access_grad_cache(var) for var in node.outputs]
@@ -1084,6 +1139,7 @@ def _populate_grad_dict(var_to_app_to_idx, grad_dict, wrt, cost_name=None):
             ]
 
             if True not in inputs_connected:
+                acc_cov[2] = True
                 # All outputs of this op are disconnected so we can skip
                 # Calling the op's grad method and report that the inputs
                 # are disconnected
@@ -1091,16 +1147,20 @@ def _populate_grad_dict(var_to_app_to_idx, grad_dict, wrt, cost_name=None):
                 # implementer the trouble of worrying about this case)
                 input_grads = [disconnected_type() for ipt in inputs]
             elif False not in only_connected_to_nan:
+                acc_cov[3] = True
                 # All inputs are only connected to nan gradients, so we don't
                 # need to bother calling the grad method. We know the gradient
                 # with respect to all connected inputs is nan.
                 input_grads = []
                 for connected in inputs_connected:
                     if connected:
+                        acc_cov[4] = True
                         input_grads.append(null_type())
                     else:
+                        acc_cov[5] = True
                         input_grads.append(disconnected_type())
             else:
+                acc_cov[6] = True
                 # At least one input of this op is connected to the cost so and
                 # not all output gradients are undefined so we must
                 # call the op's grad method
@@ -1111,8 +1171,10 @@ def _populate_grad_dict(var_to_app_to_idx, grad_dict, wrt, cost_name=None):
                 # dependency cycle. We avoid this cycle by passing (symbolic)
                 # copies of each destroyed input.
                 try:
+                    acc_cov[7] = True
                     dinputs = [node.inputs[x[0]] for x in node.op.destroy_map.values()]
                 except AttributeError:
+                    acc_cov[8] = True
                     dinputs = []
 
                 def try_to_copy_if_needed(var):
@@ -1144,8 +1206,10 @@ def _populate_grad_dict(var_to_app_to_idx, grad_dict, wrt, cost_name=None):
                         and og_dt
                         and o_dt != og_dt
                     ):
+                        acc_cov[9] = True
                         new_output_grads.append(og.astype(o_dt))
                     else:
+                        acc_cov[10] = True
                         new_output_grads.append(og)
 
                 # Make sure that, if new_output_grads[i] has a floating point
@@ -1157,6 +1221,7 @@ def _populate_grad_dict(var_to_app_to_idx, grad_dict, wrt, cost_name=None):
                         ng_dt is not None
                         and o_dt not in pytensor.tensor.type.discrete_dtypes
                     ):
+                        acc_cov[11] = True
                         assert ng_dt == o_dt
 
                 assert all(
@@ -1175,13 +1240,16 @@ def _populate_grad_dict(var_to_app_to_idx, grad_dict, wrt, cost_name=None):
                 for idx, packed in enumerate(zip(node.outputs, new_output_grads)):
                     orig_output, new_output_grad = packed
                     if not hasattr(orig_output, "shape"):
+                        acc_cov[12] = True
                         continue
                     if isinstance(new_output_grad.type, DisconnectedType):
+                        acc_cov[13] = True
                         continue
                     for orig_output_v, new_output_grad_v in get_test_values(*packed):
                         o_shape = orig_output_v.shape
                         g_shape = new_output_grad_v.shape
                         if o_shape != g_shape:
+                            acc_cov[14] = True
                             raise ValueError(
                                 "Got a gradient of shape "
                                 + str(o_shape)
@@ -1192,11 +1260,13 @@ def _populate_grad_dict(var_to_app_to_idx, grad_dict, wrt, cost_name=None):
                 input_grads = node.op.L_op(inputs, node.outputs, new_output_grads)
 
                 if input_grads is None:
+                    acc_cov[15] = True
                     raise TypeError(
                         f"{node.op}.grad returned NoneType, expected iterable."
                     )
 
                 if len(input_grads) != len(inputs):
+                    acc_cov[16] = True
                     raise ValueError(
                         f"{node.op} returned the wrong number of gradient terms."
                     )
@@ -1227,6 +1297,7 @@ def _populate_grad_dict(var_to_app_to_idx, grad_dict, wrt, cost_name=None):
                         and connection_pattern[inp_idx][out_idx]
                         and not isinstance(input_grads[inp_idx].type, DisconnectedType)
                     ):
+                        acc_cov[17] = True
                         input_grads[inp_idx] = output_grads[out_idx]
 
             # Do type checking on the result
@@ -1248,6 +1319,7 @@ def _populate_grad_dict(var_to_app_to_idx, grad_dict, wrt, cost_name=None):
             for i, term in enumerate(input_grads):
                 # Disallow Nones
                 if term is None:
+                    acc_cov[18] = True
                     # We don't know what None means. in the past it has been
                     # used to mean undefined, zero, or disconnected.
                     # We therefore don't allow it because its usage has become
@@ -1264,12 +1336,15 @@ def _populate_grad_dict(var_to_app_to_idx, grad_dict, wrt, cost_name=None):
                 # Check that the gradient term for this input
                 # has the right shape
                 if hasattr(term, "shape"):
+                    acc_cov[19] = True
                     orig_ipt = inputs[i]
                     if not isinstance(orig_ipt, NominalVariable):
+                        acc_cov[20] = True
                         for orig_ipt_v, term_v in get_test_values(orig_ipt, term):
                             i_shape = orig_ipt_v.shape
                             t_shape = term_v.shape
                             if i_shape != t_shape:
+                                acc_cov[21] = True
                                 raise ValueError(
                                     f"{node.op}.grad returned object of "
                                     f"shape {t_shape} as gradient term on input {int(i)} "
@@ -1277,7 +1352,9 @@ def _populate_grad_dict(var_to_app_to_idx, grad_dict, wrt, cost_name=None):
                                 )
 
                 if not isinstance(term.type, (NullType, DisconnectedType)):
+                    acc_cov[22] = True
                     if term.type.dtype not in pytensor.tensor.type.float_dtypes:
+                        acc_cov[23] = True
                         raise TypeError(
                             str(node.op) + ".grad illegally "
                             " returned an integer-valued variable."
@@ -1285,9 +1362,11 @@ def _populate_grad_dict(var_to_app_to_idx, grad_dict, wrt, cost_name=None):
                         )
 
                     if only_connected_to_nan[i]:
+                        acc_cov[24] = True
                         assert isinstance(term.type, NullType)
 
                     if only_connected_to_int[i]:
+                        acc_cov[25] = True
                         # This term has only integer outputs and we know
                         # it's not undefined or disconnected
                         # The only other valid thing it can be is 0
@@ -1295,6 +1374,7 @@ def _populate_grad_dict(var_to_app_to_idx, grad_dict, wrt, cost_name=None):
                         is_zero = _is_zero(term)
                         assert is_zero in ("yes", "no", "maybe")
                         if is_zero == "maybe":
+                            acc_cov[26] = True
                             msg = (
                                 f"{node.op}.grad returned {term} of type {type(term)} for input"
                                 f" {i}. This input's only connections to "
@@ -1307,6 +1387,7 @@ def _populate_grad_dict(var_to_app_to_idx, grad_dict, wrt, cost_name=None):
                                 "verifiably zeros."
                             )
                         elif is_zero == "no":
+                            acc_cov[27] = True
                             msg = (
                                 f"{node.op}.grad returned {term} of type {type(term)} for input"
                                 f" {i}. Since this input is only connected "
@@ -1324,6 +1405,7 @@ def _populate_grad_dict(var_to_app_to_idx, grad_dict, wrt, cost_name=None):
                 actually_connected = not isinstance(ig.type, DisconnectedType)
 
                 if actually_connected and not connected:
+                    acc_cov[28] = True
                     msg = (
                         f"{node.op}.grad returned {ig} of type {ig.type} for input {i}."
                         " Expected DisconnectedType instance based on "
@@ -1333,11 +1415,14 @@ def _populate_grad_dict(var_to_app_to_idx, grad_dict, wrt, cost_name=None):
                     raise TypeError(msg)
 
                 elif connected and not actually_connected:
+                    acc_cov[29] = True
                     msg = f"{node.op}.grad returned DisconnectedType for input {i}."
                     if hasattr(node.op, "connection_pattern"):
+                        acc_cov[30] = True
                         msg += " Its connection_pattern method does not" " allow this."
                         raise TypeError(msg)
                     else:
+                        acc_cov[31] = True
                         msg += (
                             " You may want to implement a "
                             "connection_pattern method for it."
@@ -1662,6 +1747,7 @@ def mode_not_slow(mode):
     else:
         return mode
 
+ver_cov = {i + 1: False for i in range(11)}
 
 def verify_grad(
     fun: Callable,
@@ -1733,11 +1819,13 @@ def verify_grad(
     from pytensor.compile.sharedvalue import shared
 
     if not isinstance(pt, (list, tuple)):
+        ver_cov[1] = True
         raise TypeError("`pt` should be a list or tuple")
 
     pt = [np.array(p) for p in pt]
 
     for i, p in enumerate(pt):
+        ver_cov[2] = True
         if p.dtype not in ("float16", "float32", "float64"):
             raise TypeError(
                 "verify_grad can work only with floating point "
@@ -1749,11 +1837,14 @@ def verify_grad(
     )
 
     if abs_tol is None:
+        ver_cov[3] = True
         abs_tol = max(_type_tol[str(p.dtype)] for p in pt)
     if rel_tol is None:
+        ver_cov[4] = True
         rel_tol = max(_type_tol[str(p.dtype)] for p in pt)
 
     if rng is None:
+        ver_cov[5] = True
         raise TypeError(
             "rng should be a valid instance of "
             "numpy.random.RandomState. You may "
@@ -1783,6 +1874,7 @@ def verify_grad(
     o_output = fun(*tensor_pt)
 
     if isinstance(o_output, list):
+        ver_cov[6] = True
         raise NotImplementedError(
             "Can't (yet) auto-test the gradient of a function with multiple outputs"
         )
@@ -1794,6 +1886,7 @@ def verify_grad(
     o_fn_out = o_fn(*[p.copy() for p in pt])
 
     if isinstance(o_fn_out, tuple) or isinstance(o_fn_out, list):
+        ver_cov[7] = True
         raise TypeError(
             "It seems like you are trying to use verify_grad "
             "on an Op or a function which outputs a list: there should"
@@ -1816,8 +1909,10 @@ def verify_grad(
     cost = pytensor.tensor.sum(t_r * o_output)
 
     if no_debug_ref:
+        ver_cov[8] = True
         mode_for_cost = mode_not_slow(mode)
     else:
+        ver_cov[9] = True
         mode_for_cost = mode
 
     cost_fn = fn_maker(tensor_pt, cost, name="gradient.py cost", mode=mode_for_cost)
@@ -1839,6 +1934,8 @@ def verify_grad(
         )
 
         if max_abs_err > abs_tol and max_rel_err > rel_tol:
+            ver_cov[10] = True
+
             raise GradientError(
                 max_arg,
                 max_err_pos,
@@ -1853,6 +1950,7 @@ def verify_grad(
 
         # get new random projection for next test
         if test_num < n_tests - 1:
+            ver_cov[11] = True
             t_r.set_value(random_projection(), borrow=True)
 
 
