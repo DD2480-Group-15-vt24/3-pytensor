@@ -2,6 +2,9 @@ import os
 
 import pytest
 
+from pytensor.gradient import acc_cov, grad_cov, rop_cov, ver_cov
+from pytensor.tensor.fourier import mak_cov
+
 
 def pytest_sessionstart(session):
     os.environ["PYTENSOR_FLAGS"] = ",".join(
@@ -22,6 +25,28 @@ def pytest_addoption(parser):
 def pytest_configure(config):
     config.addinivalue_line("markers", "slow: mark test as slow to run")
 
+
+def print_coverage(coverage_tracker, name):
+    for k, v in coverage_tracker.items():
+        if v:
+            print(f'{name} branch {k} is tested')
+        else:
+            print(f'{name} branch {k} is not tested')
+    _sum = sum(coverage_tracker.values())
+    _len = len(coverage_tracker)
+    print(f'{name} total coverage: {_sum} out of {_len} branches = {_sum/_len:.2f}')
+
+
+def pytest_sessionfinish(session, exitstatus):
+    funcs = [
+        [rop_cov, 'rop'],
+        [grad_cov, 'grad'],
+        [acc_cov, 'access_term_cache'],
+        [ver_cov, 'verify_grad'],
+        [mak_cov, 'make_node'],
+    ]
+    for coverage in funcs:
+        print_coverage(*coverage)
 
 def pytest_collection_modifyitems(config, items):
     if config.getoption("--runslow"):

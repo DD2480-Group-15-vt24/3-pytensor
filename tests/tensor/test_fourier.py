@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 import pytensor
-from pytensor.tensor.fourier import Fourier, fft
+from pytensor.tensor.fourier import Fourier, fft, mak_cov
 from pytensor.tensor.type import dmatrix, dvector, iscalar
 from tests import unittest_tools as utt
 
@@ -20,6 +20,8 @@ class TestFourier(utt.InferShapeTester):
         f = pytensor.function([a], self.op(a, n=10, axis=0))
         a = np.random.random((8, 6))
         assert np.allclose(f(a), np.fft.fft(a, 10, 0))
+
+
 
     def test_infer_shape(self):
         a = dvector()

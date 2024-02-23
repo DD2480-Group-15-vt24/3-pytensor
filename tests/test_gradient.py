@@ -14,16 +14,20 @@ from pytensor.gradient import (
     NullTypeGradError,
     Rop,
     UndefinedGrad,
+    acc_cov,
     disconnected_grad,
     disconnected_grad_,
     grad,
     grad_clip,
+    grad_cov,
     grad_not_implemented,
     grad_scale,
     grad_undefined,
     hessian,
     jacobian,
+    rop_cov,
     subgraph_grad,
+    ver_cov,
     zero_grad,
     zero_grad_,
 )
@@ -384,6 +388,8 @@ class TestGrad:
         vx = rng.standard_normal(2)
 
         utt.verify_grad(output, [vx])
+        
+
 
     def test_grad_quadratic(self):
         # test the gradient on a tiny graph
@@ -798,6 +804,7 @@ class TestZeroGrad:
 
             assert np.allclose(f(a), f2(a))
 
+
     def test_rop(self):
         x = vector()
         v = vector()
@@ -810,6 +817,7 @@ class TestZeroGrad:
         u = np.asarray(self.rng.standard_normal(5), dtype=config.floatX)
 
         assert np.count_nonzero(f(a, u)) == 0
+
 
 
 class TestDisconnectedGrad:
