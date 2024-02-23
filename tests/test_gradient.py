@@ -459,7 +459,7 @@ class TestGrad:
         vA = rng.standard_normal((2, 2))
 
         utt.verify_grad(output, [vx, vA])
-
+    
     def test_grad_int(self):
         # tests that the gradient with respect to an integer
         # is the same as the gradient with respect to a float
@@ -1113,3 +1113,25 @@ def test_different_data_types(dtype):
     x_val = rng.normal(size=(5,)).astype(pytensor.config.floatX)
     x_val_dtype = x_val.astype(dtype)
     verify_grad(correct_fun, [x_val_dtype], rng=rng)
+
+def test_grad_pt_instance():
+    # Test when pt is not a list or tuple
+    # Branch 1
+    def output(x):
+        return x * x
+    
+    rng = np.random.default_rng([2012, 8, 28])
+    vx = rng.standard_normal(2)
+
+    with pytest.raises(TypeError):
+        utt.verify_grad(output, vx)
+
+def test_grad_rng_none():
+    # Test when rng is None
+    def output(x):
+        return x * x
+    
+    vx = np.array([1, 2.4, 3])
+    
+    with pytest.raises(TypeError):
+        verify_grad(correct_fun, [vx], rng=None)
