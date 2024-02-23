@@ -28,12 +28,14 @@ from pytensor.gradient import (
     rop_cov,
     subgraph_grad,
     ver_cov,
+    verify_grad,
     zero_grad,
     zero_grad_,
 )
 from pytensor.graph.basic import Apply, graph_inputs
 from pytensor.graph.null_type import NullType
 from pytensor.graph.op import Op
+from pytensor.tensor.basic import Alloc
 from pytensor.tensor.math import add, dot, exp, sigmoid, sqr, tanh
 from pytensor.tensor.math import sum as pt_sum
 from pytensor.tensor.random import RandomStream
@@ -820,6 +822,8 @@ class TestZeroGrad:
 
 
 
+
+
 class TestDisconnectedGrad:
     def setup_method(self):
         self.rng = np.random.default_rng(seed=utt.fetch_seed())
@@ -1089,3 +1093,23 @@ def test_jacobian_disconnected_inputs():
     func_s = pytensor.function([s2], jacobian_s)
     val = np.array(1.0).astype(pytensor.config.floatX)
     assert np.allclose(func_s(val), np.zeros(1))
+
+
+
+def correct_fun(x):
+    return tanh(x)
+
+
+def test_correct_gradient():
+    seed = 12345
+    rng = np.random.default_rng(seed)
+    x_val = rng.normal(size=(5,)).astype(pytensor.config.floatX)
+    verify_grad(correct_fun, [x_val], rng=rng)
+
+@pytest.mark.parametrize("dtype", ["float16", "float32", "float64"])
+def test_different_data_types(dtype):
+    seed = 12345
+    rng = np.random.default_rng(seed)
+    x_val = rng.normal(size=(5,)).astype(pytensor.config.floatX)
+    x_val_dtype = x_val.astype(dtype)
+    verify_grad(correct_fun, [x_val_dtype], rng=rng)

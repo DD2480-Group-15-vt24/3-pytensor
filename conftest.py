@@ -27,11 +27,11 @@ def pytest_configure(config):
 
 
 def print_coverage(coverage_tracker, name):
-    for k, v in coverage_tracker.items():
-        if v:
-            print(f'{name} branch {k} is tested')
-        else:
-            print(f'{name} branch {k} is not tested')
+    # for k, v in coverage_tracker.items():
+    #     if v:
+    #         print(f'{name} branch {k} is tested')
+    #     else:
+    #         print(f'{name} branch {k} is not tested')
     _sum = sum(coverage_tracker.values())
     _len = len(coverage_tracker)
     print(f'{name} total coverage: {_sum} out of {_len} branches = {_sum/_len:.2f}')
