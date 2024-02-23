@@ -198,21 +198,21 @@ def Rop(
         rop_cov[1] = True
         _wrt: list[Variable] = [pytensor.tensor.as_tensor_variable(wrt)]
     else:
-        rop_cov[2] = False
+        rop_cov[2] = True
         _wrt = [pytensor.tensor.as_tensor_variable(x) for x in wrt]
 
     if not isinstance(eval_points, (list, tuple)):
         rop_cov[3] = True
         _eval_points: list[Variable] = [pytensor.tensor.as_tensor_variable(eval_points)]
     else:
-        rop_cov[4] = False
+        rop_cov[4] = True
         _eval_points = [pytensor.tensor.as_tensor_variable(x) for x in eval_points]
 
     if not isinstance(f, (list, tuple)):
         rop_cov[5] = True
         _f: list[Variable] = [pytensor.tensor.as_tensor_variable(f)]
     else:
-        rop_cov[6] = False
+        rop_cov[6] = True
         _f = [pytensor.tensor.as_tensor_variable(x) for x in f]
 
     if len(_wrt) != len(_eval_points):
@@ -225,13 +225,13 @@ def Rop(
         try:
             rop_cov[8] = True
             if wrt_elem.type.ndim != eval_point.type.ndim:
-                rop_cov[9] = False
+                rop_cov[9] = True
                 raise ValueError(
                     f"Elements {i} of `wrt` and `eval_point` have mismatched dimensionalities: "
                     f"{wrt_elem.type.ndim} and {eval_point.type.ndim}"
                 )
         except AttributeError:
-            rop_cov[10] = False
+            rop_cov[10] = True
             # wrt_elem and eval_point don't always have ndim like random type
             # Tensor, Sparse have the ndim attribute
             pass
@@ -318,7 +318,7 @@ def Rop(
             seen_nodes.get(out.owner, None) is None
             or seen_nodes[out.owner][out.owner.outputs.index(out)] is None
         ):
-            rop_cov[12] = False
+            rop_cov[12] = True
             message = (
                 "Rop method was asked to compute the gradient "
                 "with respect to a variable that is not part of "
@@ -329,37 +329,37 @@ def Rop(
                 rop_cov[13] = True
                 pass
             elif disconnected_outputs == "warn":
-                rop_cov[14] = False
+                rop_cov[14] = True
                 warnings.warn(message, stacklevel=2)
             elif disconnected_outputs == "raise":
-                rop_cov[15] = False
+                rop_cov[15] = True
                 message = utils.get_variable_trace_string(out)
                 raise DisconnectedInputError(message)
             else:
-                rop_cov[16] = False
+                rop_cov[16] = True
                 raise ValueError(
                     "Invalid value for keyword "
                     "'disconnected_inputs', valid values are "
                     "'ignore', 'warn' and 'raise'."
                 )
             if return_disconnected.lower() == "zero":
-                rop_cov[17] = False
+                rop_cov[17] = True
                 rval.append(pytensor.tensor.zeros_like(out))
             elif return_disconnected.lower() == "none":
-                rop_cov[18] = False
+                rop_cov[18] = True
                 rval.append(None)
             elif return_disconnected.lower() == "disconnected":
-                rop_cov[19] = False
+                rop_cov[19] = True
                 rval.append(disconnected_type())
             else:
-                rop_cov[20] = False
+                rop_cov[20] = True
                 raise ValueError(
                     "Invalid value for keyword "
                     "'return_disconnected', valid values are "
                     "'zero', 'None' and 'Disconnected'."
                 )
         else:
-            rop_cov[21] = False
+            rop_cov[21] = True
             rval.append(seen_nodes[out.owner][out.owner.outputs.index(out)])
 
     using_list = isinstance(f, list)
