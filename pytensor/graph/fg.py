@@ -21,7 +21,14 @@ from pytensor.graph.features import AlreadyThere, Feature, ReplaceValidate
 from pytensor.graph.utils import MetaObject, MissingInputError, TestValueError
 from pytensor.misc.ordered_set import OrderedSet
 
-
+import_node_coverage = {
+    54: False,  # Branch 54
+    55: False,  # Branch 55
+    56: False,  # Branch 56
+    57: False,  # Branch 57
+    58: False,  # Branch 58
+    59: False,  # Branch 59
+}
 if TYPE_CHECKING:
     from pytensor.graph.op import Op
 
@@ -341,18 +348,21 @@ class FunctionGraph(MetaObject):
         # input set.  (The functions in the graph module only use the input set
         # to know where to stop going down.)
         new_nodes = io_toposort(self.variables, apply_node.outputs)
-
-        if check:
+        import_node_coverage[54] = True #flag 54
+        if check: #branch 54
             for node in new_nodes:
                 for var in node.inputs:
+                    import_node_coverage[55] = True #flag 55
                     if (
                         var.owner is None
                         and not isinstance(var, AtomicVariable)
                         and var not in self.inputs
-                    ):
-                        if import_missing:
+                    ):#branch 55
+                        import_node_coverage[56] = True #flag 56
+                        if import_missing: #branch 56
                             self.add_input(var)
-                        else:
+                        else: #branch 57
+                            import_node_coverage[57] = True #flag 57
                             error_msg = (
                                 f"Input {node.inputs.index(var)} ({var})"
                                 " of the graph (indices start "
@@ -366,14 +376,16 @@ class FunctionGraph(MetaObject):
         for node in new_nodes:
             assert node not in self.apply_nodes
             self.apply_nodes.add(node)
-            if not hasattr(node.tag, "imported_by"):
+            import_node_coverage[58] = True #flag 58
+            if not hasattr(node.tag, "imported_by"): #branch 58
                 node.tag.imported_by = []
             node.tag.imported_by.append(str(reason))
             for output in node.outputs:
                 self.setup_var(output)
                 self.variables.add(output)
             for i, input in enumerate(node.inputs):
-                if input not in self.variables:
+                import_node_coverage[59] = True #flag 59
+                if input not in self.variables: #branch 59
                     self.setup_var(input)
                     self.variables.add(input)
                 self.add_client(input, (node, i))

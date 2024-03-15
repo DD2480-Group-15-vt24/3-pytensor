@@ -78,7 +78,7 @@ class SharedVariable(Variable):
             self.container = Container(
                 self,
                 storage=[
-                    type.filter(value, strict=strict, allow_downcast=allow_downcast)
+                    type.filter(value, {}, strict=strict, allow_downcast=allow_downcast)
                 ],
                 readonly=False,
                 strict=strict,

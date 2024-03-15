@@ -858,7 +858,7 @@ class Function:
                 else:
                     try:
                         s.storage[0] = s.type.filter(
-                            arg, strict=s.strict, allow_downcast=s.allow_downcast
+                            arg, {}, strict=s.strict, allow_downcast=s.allow_downcast
                         )
 
                     except Exception as e:
