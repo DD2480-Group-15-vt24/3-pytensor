@@ -19,6 +19,8 @@ from pytensor.tensor.type import TensorType, integer_dtypes
 from pytensor.tensor.variable import TensorConstant
 
 
+mak_cov = {i + 1: False for i in range(9)}
+
 class Fourier(Op):
     """
     WARNING: for officially supported FFTs, use pytensor.tensor.fft, which
@@ -59,33 +61,42 @@ class Fourier(Op):
     def make_node(self, a, n, axis):
         a = as_tensor_variable(a)
         if a.ndim < 1:
+            mak_cov[1] = True
             raise TypeError("Input must be an array, not a scalar")
         if axis is None:
+            mak_cov[2] = True
             axis = a.ndim - 1
             axis = as_tensor_variable(axis)
         else:
+            mak_cov[3] = True
             axis = as_tensor_variable(axis)
             if axis.dtype not in integer_dtypes:
+                mak_cov[4] = True
                 raise TypeError("Index of the transformed axis must be of type integer")
             elif axis.ndim != 0 or (
                 isinstance(axis, TensorConstant)
                 and (axis.data < 0 or axis.data > a.ndim - 1)
             ):
+                mak_cov[5] = True
                 raise TypeError(
                     "Index of the transformed axis must be "
                     "a scalar not smaller than 0 and smaller than "
                     "dimension of array"
                 )
         if n is None:
+            mak_cov[6] = True
             n = a.shape[axis]
             n = as_tensor_variable(n)
         else:
+            mak_cov[7] = True
             n = as_tensor_variable(n)
             if n.dtype not in integer_dtypes:
+                mak_cov[8] = True
                 raise TypeError(
                     "Length of the transformed axis must be of type integer"
                 )
             elif n.ndim != 0 or (isinstance(n, TensorConstant) and n.data < 1):
+                mak_cov[9] = True
                 raise TypeError(
                     "Length of the transformed axis must be a strictly positive scalar"
                 )

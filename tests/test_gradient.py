@@ -14,22 +14,28 @@ from pytensor.gradient import (
     NullTypeGradError,
     Rop,
     UndefinedGrad,
+    acc_cov,
     disconnected_grad,
     disconnected_grad_,
     grad,
     grad_clip,
+    grad_cov,
     grad_not_implemented,
     grad_scale,
     grad_undefined,
     hessian,
     jacobian,
+    rop_cov,
     subgraph_grad,
+    ver_cov,
+    verify_grad,
     zero_grad,
     zero_grad_,
 )
 from pytensor.graph.basic import Apply, graph_inputs
 from pytensor.graph.null_type import NullType
 from pytensor.graph.op import Op
+from pytensor.tensor.basic import Alloc
 from pytensor.tensor.math import add, dot, exp, sigmoid, sqr, tanh
 from pytensor.tensor.math import sum as pt_sum
 from pytensor.tensor.random import RandomStream
@@ -384,6 +390,8 @@ class TestGrad:
         vx = rng.standard_normal(2)
 
         utt.verify_grad(output, [vx])
+        
+
 
     def test_grad_quadratic(self):
         # test the gradient on a tiny graph
@@ -451,7 +459,7 @@ class TestGrad:
         vA = rng.standard_normal((2, 2))
 
         utt.verify_grad(output, [vx, vA])
-
+    
     def test_grad_int(self):
         # tests that the gradient with respect to an integer
         # is the same as the gradient with respect to a float
@@ -798,6 +806,7 @@ class TestZeroGrad:
 
             assert np.allclose(f(a), f2(a))
 
+
     def test_rop(self):
         x = vector()
         v = vector()
@@ -810,6 +819,9 @@ class TestZeroGrad:
         u = np.asarray(self.rng.standard_normal(5), dtype=config.floatX)
 
         assert np.count_nonzero(f(a, u)) == 0
+
+
+
 
 
 class TestDisconnectedGrad:
@@ -1081,3 +1093,45 @@ def test_jacobian_disconnected_inputs():
     func_s = pytensor.function([s2], jacobian_s)
     val = np.array(1.0).astype(pytensor.config.floatX)
     assert np.allclose(func_s(val), np.zeros(1))
+
+
+
+def correct_fun(x):
+    return tanh(x)
+
+
+def test_correct_gradient():
+    seed = 12345
+    rng = np.random.default_rng(seed)
+    x_val = rng.normal(size=(5,)).astype(pytensor.config.floatX)
+    verify_grad(correct_fun, [x_val], rng=rng)
+
+@pytest.mark.parametrize("dtype", ["float16", "float32", "float64"])
+def test_different_data_types(dtype):
+    seed = 12345
+    rng = np.random.default_rng(seed)
+    x_val = rng.normal(size=(5,)).astype(pytensor.config.floatX)
+    x_val_dtype = x_val.astype(dtype)
+    verify_grad(correct_fun, [x_val_dtype], rng=rng)
+
+def test_grad_pt_instance():
+    # Test when pt is not a list or tuple
+    # Branch 1
+    def output(x):
+        return x * x
+    
+    rng = np.random.default_rng([2012, 8, 28])
+    vx = rng.standard_normal(2)
+
+    with pytest.raises(TypeError):
+        utt.verify_grad(output, vx)
+
+def test_grad_rng_none():
+    # Test when rng is None
+    def output(x):
+        return x * x
+    
+    vx = np.array([1, 2.4, 3])
+    
+    with pytest.raises(TypeError):
+        verify_grad(correct_fun, [vx], rng=None)

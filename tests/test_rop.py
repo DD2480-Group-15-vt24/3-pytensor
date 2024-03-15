@@ -18,7 +18,7 @@ import pytest
 import pytensor
 import pytensor.tensor as pt
 from pytensor import function
-from pytensor.gradient import Lop, Rop, grad, grad_undefined
+from pytensor.gradient import Lop, Rop, disconnected_grad, grad, grad_undefined
 from pytensor.graph.basic import Apply
 from pytensor.graph.op import Op
 from pytensor.tensor.math import argmax, dot
@@ -37,6 +37,39 @@ class BreakRop(Op):
     """
 
     __props__ = ()
+
+    def test_rop_behavior():
+        rng = np.random.default_rng(1234)
+        x = vector("x")
+        W = matrix("W")
+        v = vector("v")
+
+        # Differentiable operation
+        y_diff = pt.dot(x, W)
+        eval_point_diff = rng.normal(size=x.shape).astype(pytensor.config.floatX)
+        Rop_diff = Rop(y_diff, x, eval_point_diff)
+        assert Rop_diff is not None, "Rop should be computable for differentiable operations."
+
+        # Non-differentiable operation using grad_undefined
+        y_undefined = grad_undefined(BreakRop(), 0, x)
+        with pytest.raises(ValueError):
+            Rop_undefined = Rop(y_undefined, x, v)
+    
+        # Disconnected operation
+        y_disconnected = disconnected_grad(x)
+        Rop_disconnected = Rop(y_disconnected, x, v)
+        assert np.allclose(Rop_disconnected.eval({x: eval_point_diff, v: eval_point_diff}), 0), "Rop should be zero for disconnected operations."
+
+        # Test with a function that includes a mix of differentiable and non-differentiable paths
+        y_mixed = y_diff + grad_undefined(BreakRop(), 0, x)
+        with pytest.raises(ValueError):
+            Rop_mixed = Rop(y_mixed, x, v)
+
+        # Test with a function that includes a mix of differentiable and disconnected paths
+        y_mixed_disconnected = y_diff + disconnected_grad(x)
+        Rop_mixed_disconnected = Rop(y_mixed_disconnected, x, v)
+        assert Rop_mixed_disconnected is not None, "Rop should be computable for operations with mixed differentiable and disconnected paths."
+
 
     def make_node(self, x):
         return Apply(self, [x], [x.type()])
